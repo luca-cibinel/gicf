@@ -19,12 +19,12 @@ The package also implements some helper functions which allow to compute the max
 
 ## Reproducibility
 
-Inside the folder `Simulations and analysis` there are the files used to perform both the simulation studies and the analysis on the sonar data. These use a local implementation of GICF (equivalent to the `gicf` package), contained in the folder `Simulations and analysis/gicf`. When executing the R scripts, the working directory should be set to the directory of the script.
+Inside the folder `Simulations and analysis` there are the files used to perform both the simulation studies and the analysis on the sonar data. These use a local implementation of the GICF algorithm (equivalent to the `gicf` package), contained in the folder `Simulations and analysis/gicf`. When executing the R scripts, the working directory should be set to the directory of the script.
 
 ### Simulation studies
 The folder `Simulations and analysis/simulations` contains the simulated data and the R scripts of the simulation studies:
 - `simulation_mle.R` compares the MLE estimate versus the ridge-regularised estimate of $\Sigma$ in under the specification of an adjacency matrix.
-- `simulation_time.R` compares the computational time required to GICF and covglasso to estimate a sparse covariance matrix under a known sparsity pattern.
+- `simulation_time.R` compares the computational time required to the GICF and the covglasso algorithms to estimate a sparse covariance matrix under a known sparsity pattern.
 - `simulation_lasso.R` compares the covglasso estimate versus the ridge-regularised covglasso estimate of $\Sigma$.
 
 The data contained in the `Simulations and analysis/simulations/data` are simulated datasets sampled from a multivariate normal distribution with mean $0$. Each dataset is described by two files:
