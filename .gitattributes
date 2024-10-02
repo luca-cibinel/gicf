@@ -1,0 +1,2 @@
+data/simul_mod_RB_d_0.15_p_300_n_2000.dat filter=lfs diff=lfs merge=lfs -text
+data/simul_mod_RB_d_0.65_p_300_n_2000.dat filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,17 @@
+Package: gicf
+Type: Package
+Title: Penalised Likelihood Estimation of a Covariance Matrix
+Description: Penalised likelihood estimation of a covariance matrix via the ridge-regularised covglasso estimator.
+Version: 1.0
+Date: 2024-09-26
+Authors@R: c(
+    person("Luca", "Cibinel", email = "lcibinel@gmail.com", role = c("cre", "aut")),
+    person("Alberto", "Roverato", role = "aut"),
+    person("Veronica", "Vinciotti", role = "aut")
+    )
+Maintainer: Luca Cibinel <lcibinel@gmail.com>
+License: What license is it under?
+Imports: Rcpp (>= 1.0.12)
+Suggests: mvtnorm
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 7.3.2
