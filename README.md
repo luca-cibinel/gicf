@@ -1,5 +1,3 @@
-# A unified approach to penalized likelihood estimation of covariance matrices in high dimensions
-
 ## How to install the package:
 ```
 library(devtools)
@@ -7,7 +5,6 @@ install_github("luca-cibinel/gicf", build_vignette = F)
 
 library(gicf)
 ```
-
 
 ## Overview
 This package implements the Generalised Iterative Conditional Fitting for the optimisation of the penalised Gaussian loglikelihood
@@ -18,9 +15,11 @@ under the constraint that $\Sigma$ satisfies a given pattern of zeros.
 
 The package also implements some helper functions which allow to compute the maximum value of the parameters $\kappa$ and $\lambda$ for which the solution is not trivial.
 
+# A unified approach to penalized likelihood estimation of covariance matrices in high dimensions
+
 ## Reproducibility
 
-Inside the folder `Simulations and analysis` there are the files used to perform both the simulation studies and the analysis on the sonar data. These uses a local implementation of GICF (equivalent to the `gicf` package), contained in the folder `Simulations and analysis/gicf`. When executing the R scripts, the working directory should be set to the directory of the script.
+Inside the folder `Simulations and analysis` there are the files used to perform both the simulation studies and the analysis on the sonar data. These use a local implementation of GICF (equivalent to the `gicf` package), contained in the folder `Simulations and analysis/gicf`. When executing the R scripts, the working directory should be set to the directory of the script.
 
 ### Simulation studies
 The folder `Simulations and analysis/simulations` contains the simulated data and the R scripts of the simulation studies:
