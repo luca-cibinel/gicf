@@ -32,7 +32,7 @@ The data contained in the `Simulations and analysis/simulations/data` are simula
 sigma_mod_RB_d_[D]_p_[P]_n_[N].dat
 simul_mod_RB_d_[D]_p_[P]_n_[N].dat
 ```
-where the prefix `sigma` indicates the file which contains the true covariance matrix and the prefix `simul` contains the simulated data. In the name of each file, `D` indicates $10$ times the density of the covariance matrix, `P` indicates the number of covariates and `N` indicates the number of observations.
+where the prefix `sigma` indicates the file which contains the true covariance matrix and the prefix `simul` contains the simulated data. In the name of each file, `D` indicates $10$ times the density of the covariance matrix, `P` indicates the number of covariates and `N` indicates the number of observations. The simulations regarding computational time are an exception to this format, due to the large amount of data used in this study. Instead of relying on a local copy of the data, new data are sampled each time, using the true covariance matrix stored in the appropriate `.dat` file. The original datasets can be made available upon request.
 
 The folder `Simulations and analysis/simulations/environments` contains one R environment for each simulation study. If these environment are loaded, the output can be recovered by running the section "OUTPUT".
 
