@@ -39,4 +39,4 @@ The folder `Simulations and analysis/simulations/environments` contains one R en
 ### Sonar data analysis
 Inside the folder `Simulations and analysis/sonar data analysis` there is the R script which performs the analysis. The data is downloaded directly by the script.
 
-Together with the script there are two R environments, for the banded and non-banded estimators, which contains the computed values of the cross validation objective function, used to perform model selection. If those enviornments are loaded, the output can be recoverd directly by running the section "OUTPUT".
+Together with the script there are two R environments, for the banded and non-banded estimators, which contain the computed values of the cross validation objective function, used to perform model selection. If those enviornments are loaded, the output can be recoverd directly by running the section "OUTPUT".
