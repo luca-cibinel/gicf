@@ -8,8 +8,7 @@
 \packageDescription{gicf}
 }
 \details{
-%%  ~~ An overview of how to use the package, ~~
-%%  ~~ including the most important functions ~~
+This package optimises the penalised loglikelihood function of a Gaussian covariance graphical model via an iterative coordinate descent algorithm.
 }
 \author{
 \packageAuthor{gicf}
@@ -17,18 +16,10 @@
 Maintainer: \packageMaintainer{gicf}
 }
 \references{
-%%  ~~ Literature or other references for background information ~~
+Cibinel, L., A. Roverato, and V. Vinciotti (2024). A unified approach to penalized likelihood estimation of covariance matrices in high dimensions. arXiv, arXiv:2410.02403.
 }
 \keyword{package}
 
 %% Uncomment below to imitate parts of library(help = gicf)
 %\section{The \file{DESCRIPTION} File}{\packageDESCRIPTION{gicf}}
 %\section{Documentation Index}{\packageIndices{gicf}}
-
-\seealso{
-%%  ~~ Optional links to other man pages, e.g. ~~
-%%  ~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
-}
-\examples{
-%%  ~~ Optional simple examples of the most important functions ~~
-}

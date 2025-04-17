@@ -57,29 +57,30 @@ associated with the corresponding value of \code{lambda}.
 }
 \description{
 Estimation of a sparse covariance matrix via
-the ridge-regularised covglasso estimator.
+the ridge-regularised covglasso estimator described in Cibinel et al. (2024).
 }
 \details{
 This function computes the ridge-regularised covglasso estimator
 of the covariance matrix of a multivariate normal distribution, that is
-it computes the maximum of the penlised log-likelihood
+it computes the maximum of the penalised log-likelihood
 \deqn{-\text{log}|\Sigma| - \text{trace}(\Sigma^{-1}S) - \lambda\|\Sigma - \text{diag}(\Sigma)\|_1 - \kappa\|\Sigma^{-1}\|_1,}
 where \eqn{\lambda, \kappa \geq 0}.
 The optimum is computed via a coordinate descent algorithm, resulting
 in an approach which unifies and extends the methods of Chaudhuri et. al
-(2007), Bien and Tibshirani (2011) and Wang (2014).
+(2007), Warton (2008), Bien and Tibshirani (2011) and Wang (2014).
 }
 \section{References}{
 
 
-Chaudhuri, S., M. Drton, and T. S. Richardson (2007). Estimation of a covariance matrix with
- zeros. Biometrika 94 (1), 199–216.
+Chaudhuri, S., M. Drton, and T. S. Richardson (2007). Estimation of a covariance matrix with zeros. Biometrika 94 (1), 199–216.
 
-Bien, J. and R. J. Tibshirani (2011). Sparse estimation of a covariance matrix.
- Biometrika 98 (4), 807–820.
+Cibinel, L., A. Roverato, and V. Vinciotti (2024). A unified approach to penalized likelihood estimation of covariance matrices in high dimensions. arXiv, arXiv:2410.02403.
 
-Wang, H. (2014). Coordinate descent algorithm for covariance graphical lasso. Statistics and
- Computing 24, 521–529.
+Bien, J. and R. J. Tibshirani (2011). Sparse estimation of a covariance matrix. Biometrika 98 (4), 807–820.
+
+Wang, H. (2014). Coordinate descent algorithm for covariance graphical lasso. Statistics and Computing 24, 521–529.
+
+Warton, D. I. (2008). Penalized normal likelihood and ridge regularization of correlation and covariance matrices. Journal of the American Statistical Association 103 (481), 340–349.
 }
 
 \examples{

@@ -5,29 +5,27 @@
 #' These utility functions describe the boundary of the region
 #' \deqn{\mathcal{H} = \{(\kappa, \lambda) \in \mathbb{R}_{\geq 0}^2: \lambda \leq \lambda_{MAX}(\kappa)\},}
 #' with
-#' \deqn{\lambda \leq \lambda_{MAX}(\kappa) \Longleftrightarrow \kappa \leq \kappa_{MAX}(\lambda).}
+#' \deqn{\lambda \leq \lambda_{MAX}(\kappa) \Longleftrightarrow \kappa \leq \kappa_{MAX}(\lambda),}
+#' \deqn{\lambda_{MAX}(\kappa) = \max_{{i,j}\in\mathcal{G}}\frac{|s_{ij}|}{(s_{ii} + \kappa)(s_{jj} + \kappa)},}
+#' \deqn{\kappa_{MAX}(\lambda) = \max_{\substack{{i,j}\in\mathcal{G}\\ g_{ij}(\lambda)\geq 0}}\left\{\sqrt{\frac{1}{4}(s_{ii} + s_{jj}) + g_{ij}(\lambda)} - \frac{1}{2}(s_{ii}+s_{jj})\right\},}
+#' \deqn{g_{ij}(\lambda) = \frac{|s_{ij}|}{\lambda} - s_{ii}s_{jj}.}
+#' Here \eqn{S} is the sample covariance matrix and \eqn{\mathcal{G}} is a graph whose adjacency matrix has the same sparsity pattern as \code{adj}.
 #' If the parameters \eqn{(\kappa, \lambda)} lay outside of \eqn{\mathcal{H}}, and the starting
-#' point of the Generalised Iterative Conditional Fitting algorithm is \eqn{\text{diag}(S)},
-#' then the output will aslo be \eqn{\text{diag}(S)}.
+#' point of the Generalised Iterative Conditional Fitting algorithm is \eqn{\text{diag}(S + \kappa I)},
+#' then the output will also be \eqn{\text{diag}(S + \kappa I)}.
 #'
 #'
 #' @param S The sample covariance matrix.
-#' @param lambda The non-negative lasso shrinkage parameter.
-#' @param kappa The non-negative ridge regularisation parameter.
+#' @param kappa,lambda The non-negative ridge regularisation/lasso shrinkage parameters.
 #' @param adj An optional matrix whose pattern of zeroes is to be enforced
 #'  onto the final output of the Generalised Iterative Conditional Fitting algorithm.
 #'
-#' @return \code{lambdamax} returns a scalar value representing \eqn{\lambda_{MAX}(\kappa)}. \code{kappamax} returns a scalar value representing \eqn{\kappa_{MAX}(\lambda)}
+#' @returns \code{lambdamax} returns a scalar value representing \eqn{\lambda_{MAX}(\kappa)}. \code{kappamax} returns a scalar value representing \eqn{\kappa_{MAX}(\lambda)}
 #'
-#' @example example_lkmax.R
+#' @example inst/examples/example_hyperparameters.R
 #'
-#' @name lkmax
+#' @name Hyperparameters
 #'
-#' @usage NULL
-placeholder <- function(S, lambda, kappa, adj){ NULL } # only needed to fix correct
-                                                       # parameter order in roxygenise()
-
-#' @rdname lkmax
 #' @export
 lambdamax <- function( S, kappa = 0, adj = 1 - diag(1, nrow(S)) ){
   adj <- abs(sign(adj)) # Ensure that adj has the right format
@@ -44,7 +42,7 @@ lambdamax <- function( S, kappa = 0, adj = 1 - diag(1, nrow(S)) ){
   return(lambda.max)
 }
 
-#' @rdname lkmax
+#' @rdname Hyperparameters
 #' @export
 kappamax <- function( S, lambda, adj = 1 - diag(1, nrow(S)) ){
   adj <- abs(sign(adj)) # Ensure that adj has the right format
@@ -77,6 +75,29 @@ kappamax <- function( S, lambda, adj = 1 - diag(1, nrow(S)) ){
   return(unname(abs(k.max)))
 }
 
+#' Gaussian Covariance Graphical Model Loglikelihood function
+#'
+#' Computes the penalised loglikelihood function of a Gaussian covariance graph model.
+#'
+#' When imposing sparsity on the covariance matrix of a multivariate Gaussian distribution, the resulting
+#' model can be interpreted as a covariance graphical model, i.e., the independence structure of the components
+#' of the random vector can be encoded by a graph in which the nodes are identified with the variables and
+#' a missing edge between two nodes implies that the corresponding variables are marginally independent.
+#'
+#' In particular, this model admits both a ridge and a lasso penalty, resulting in the loglikelihood function
+#' \deqn{-\text{log}|\Sigma| - \text{trace}(\Sigma^{-1}S) - \lambda\|\Sigma - \text{diag}(\Sigma)\|_1 - \kappa\|\Sigma^{-1}\|_1,}
+#' where \eqn{\lambda, \kappa \geq 0}.
+#'
+#' @param Sigma The covariance matrix.
+#' @param S The sample covariance matrix.
+#' @param n The size of the observed dataset.
+#' @param lambda A non-negative lasso parameter.
+#' @param kappa A non-negative ridge regularisation parameter.
+#'
+#' @returns The value of the penalised loglikelihood function.
+#' @export
+#'
+#' @example inst/examples/example_loglik.R
 gcgmloglik <- function(Sigma, S, n, lambda = 0, kappa = 0){
   P <- 1 - diag(nrow(S))
 
@@ -88,16 +109,16 @@ gcgmloglik <- function(Sigma, S, n, lambda = 0, kappa = 0){
 #' Penalised maximum likelihood covariance matrix estimation
 #'
 #' Estimation of a sparse covariance matrix via
-#' the ridge-regularised covglasso estimator.
+#' the ridge-regularised covglasso estimator described in Cibinel et al. (2024).
 #'
 #' This function computes the ridge-regularised covglasso estimator
 #' of the covariance matrix of a multivariate normal distribution, that is
-#' it computes the maximum of the penlised log-likelihood
+#' it computes the maximum of the penalised log-likelihood
 #' \deqn{-\text{log}|\Sigma| - \text{trace}(\Sigma^{-1}S) - \lambda\|\Sigma - \text{diag}(\Sigma)\|_1 - \kappa\|\Sigma^{-1}\|_1,}
 #' where \eqn{\lambda, \kappa \geq 0}.
 #' The optimum is computed via a coordinate descent algorithm, resulting
 #' in an approach which unifies and extends the methods of Chaudhuri et. al
-#' (2007), Bien and Tibshirani (2011) and Wang (2014).
+#' (2007), Warton (2008), Bien and Tibshirani (2011) and Wang (2014).
 #'
 #' @param data A numerical matrix whose rows contain
 #'  the observations of multivariate normal random vector.
@@ -116,7 +137,7 @@ gcgmloglik <- function(Sigma, S, n, lambda = 0, kappa = 0){
 #' @param adj An optional matrix whose pattern of zeroes is enforced
 #'  onto the final output of the algorithm.
 #'
-#' @return If a scalar value for \code{lambda} is provided, a list containing the following elements.
+#' @returns If a scalar value for \code{lambda} is provided, a list containing the following elements.
 #' \tabular{ll}{
 #'  \code{sigma} \tab The estimate of the covariance matrix. \cr\tab\cr
 #'  \code{omega} \tab The inverse of the estimated covariance matrix. \cr\tab\cr
@@ -130,20 +151,20 @@ gcgmloglik <- function(Sigma, S, n, lambda = 0, kappa = 0){
 #'
 #' @section References:
 #'
-#' Chaudhuri, S., M. Drton, and T. S. Richardson (2007). Estimation of a covariance matrix with
-#'  zeros. Biometrika 94 (1), 199–216.
+#' Chaudhuri, S., M. Drton, and T. S. Richardson (2007). Estimation of a covariance matrix with zeros. Biometrika 94 (1), 199–216.
 #'
-#' Bien, J. and R. J. Tibshirani (2011). Sparse estimation of a covariance matrix.
-#'  Biometrika 98 (4), 807–820.
+#' Cibinel, L., A. Roverato, and V. Vinciotti (2024). A unified approach to penalized likelihood estimation of covariance matrices in high dimensions. arXiv, arXiv:2410.02403.
 #'
-#' Wang, H. (2014). Coordinate descent algorithm for covariance graphical lasso. Statistics and
-#'  Computing 24, 521–529.
+#' Bien, J. and R. J. Tibshirani (2011). Sparse estimation of a covariance matrix. Biometrika 98 (4), 807–820.
 #'
+#' Wang, H. (2014). Coordinate descent algorithm for covariance graphical lasso. Statistics and Computing 24, 521–529.
+#'
+#' Warton, D. I. (2008). Penalized normal likelihood and ridge regularization of correlation and covariance matrices. Journal of the American Statistical Association 103 (481), 340–349.
+#'
+#' @name gicf
 #' @export
 #'
-#' @example example_gicf.R
-#'
-#'
+#' @example inst/examples/example_gicf.R
 gicf <- function(data = NULL, S = NULL, n = NULL, lambda = 0, kappa = 0,
                     max.iter = 2500, tol = 1e-4, Sigma.init = NULL, adj = NULL){
   if(is.null(data) && (is.null(S) || is.null(n)))
