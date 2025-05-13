@@ -1,5 +1,8 @@
 useDynLib(gicf)
 importFrom(Rcpp, evalCpp)
-#exportPattern("^[[:alpha:]]+")
+importFrom(stats, cov)
 
-export(lambdamax, kappamax, gcgmloglik, gicf)
+export(lambdamax)
+export(kappamax)
+export(gcgmloglik)
+export(gicf)
