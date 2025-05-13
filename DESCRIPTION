@@ -19,7 +19,7 @@ Author: Luca Cibinel [cre, aut],
   Mathias Drton [ctb] (<https://orcid.org/0000-0001-5614-3025>)
 Maintainer: Luca Cibinel <lcibinel@gmail.com>
 License: GPL-3
-Imports: Rcpp (>= 1.0.12)
+Imports: Rcpp (>= 1.0.12), stats
 Suggests: mvtnorm
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 7.3.2
