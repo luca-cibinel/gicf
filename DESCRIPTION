@@ -18,7 +18,7 @@ Author: Luca Cibinel [cre, aut],
   Michael Fop [ctb] (<https://orcid.org/0000-0003-3936-2757>),
   Mathias Drton [ctb] (<https://orcid.org/0000-0001-5614-3025>)
 Maintainer: Luca Cibinel <lcibinel@gmail.com>
-License: GPL-3 + file LICENSE
+License: GPL-3
 Imports: Rcpp (>= 1.0.12), stats
 Suggests: mvtnorm
 LinkingTo: Rcpp, RcppArmadillo
