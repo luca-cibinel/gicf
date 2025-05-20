@@ -1,4 +1,18 @@
+# A unified approach to penalized likelihood estimation of covariance matrices in high dimensions
+
+This repository contains the code developed in the context of the paper [Cibinel et al. (2024)](https://arxiv.org/abs/2410.02403), which includes both the implementation of the Generalised Iterative Conditional Fitting (see below), the simulation studies and the practical analyses that have been conducted.
+
+The algorithm is provided both in the form of the R package `gicf` and as the original R/C++ scripts created during the development of the methodology. The structure of the repository mirrors that of the R package submitted to CRAN, with all the information needed for the reproducibility of the results presented in Cibinel et al. (2024) stored in the folder `Simulations and analysis`.
+
 ## How to install the package:
+To install from CRAN (**recommended**):
+```
+install.packages("gicf")
+
+library(gicf)
+```
+
+To install directly from this repository:
 ```
 library(devtools)
 install_github("luca-cibinel/gicf", build_vignette = F)
@@ -7,15 +21,13 @@ library(gicf)
 ```
 
 ## Overview
-This package implements the Generalised Iterative Conditional Fitting for the optimisation of the penalised Gaussian loglikelihood
+The Generalised Iterative Conditional Fitting optimises the penalised Gaussian loglikelihood
 
 $$-\log{|\Sigma|} - \text{tr}(\Sigma^{-1}S) - \lambda\|\Sigma - \text{diag}(\Sigma)\|_1 - \kappa\|\text{diag}(\Sigma^{-1})\|_1,$$
 
 under the constraint that $\Sigma$ satisfies a given pattern of zeros.
 
 The package also implements some helper functions which allow to compute the maximum value of the parameters $\kappa$ and $\lambda$ for which the solution is not trivial.
-
-# A unified approach to penalized likelihood estimation of covariance matrices in high dimensions
 
 ## Reproducibility
 
@@ -40,3 +52,6 @@ The folder `Simulations and analysis/simulations/environments` contains one R en
 Inside the folder `Simulations and analysis/sonar data analysis` there is the R script which performs the analysis. The data is downloaded directly by the script.
 
 Together with the script there are two R environments, for the banded and non-banded estimators, which contain the computed values of the cross validation objective function, used to perform model selection. If those enviornments are loaded, the output can be recoverd directly by running the section "OUTPUT".
+
+## References
+- Cibinel, L., Roverato, A., & Vinciotti, V. (2024). "A unified approach to penalized likelihood estimation of covariance matrices in high dimensions", **arXiv preprint**, [https://arxiv.org/abs/2410.02403](https://arxiv.org/abs/2410.02403)
