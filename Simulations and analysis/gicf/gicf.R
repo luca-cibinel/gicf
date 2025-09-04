@@ -200,11 +200,20 @@ gicf <- function(data = NULL, S = NULL, n = NULL, lambda = 0, kappa = 0,
     Sigma <- Sigma.init
     lambda.max <- -1 # Initial condition cannot be guaranteed to be diag(S): disable lambdamax
   }
-
-  fit <- gicf_wrapper(Sigma, adj, n, S, lambda, lambda.max, tol, tol, max.iter, max.iter)
-
-  if(length(lambda) == 1)
-    return(fit[[1]])
-
+  
+  if(!is.matrix(lambda)){ # If lambda is a scalar
+    if(length(lambda) > 1){
+      stop("Lambda can only be a scalar or a matrix.")
+    }
+    lambda = matrix(lambda, p, p)
+    diag(lambda) <- 0
+  }else{
+    if(!isSymmetric(lambda)){
+      stop("Provided lambda matrix is not symmetric.")
+    }
+  }
+  
+  fit <- gicf_core(Sigma, adj, n, S, lambda, tol, tol, max.iter, max.iter)
+  
   return(fit)
 }

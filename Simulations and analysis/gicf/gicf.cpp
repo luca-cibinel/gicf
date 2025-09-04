@@ -1,5 +1,8 @@
 /*
  * Penalised likelihood estimation of a covariance matrix via the ridge-regularised covglasso estimator.
+ * This code is a slightly modified version of the R package gicf, to be used only for
+ * the simulation studies presented in Cibinel et. al (2024).
+ * 
  * Copyright (C) 2025  Luca Cibinel <lcibinel@gmail.com>
  *
  * Based on the C++ code of the R package covglasso (by Michael Fop) and
@@ -39,11 +42,10 @@ Rcpp::List profileloglik(arma::mat sigma, arma::mat S, int n) {
                              Named("inv") =  inv);
 }
 
-
 // [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
 Rcpp::List gicf_core(arma::mat start, arma::umat adj,
-                     int n, arma::mat S, double lambda,
-                     double lambda_max,
+                     int n, arma::mat S, arma::mat lambda,
                      double tolout, double tolin,
                      double iterout, double iterin) {
   // cout << "Review version initiated..." << endl;
@@ -63,17 +65,6 @@ Rcpp::List gicf_core(arma::mat start, arma::umat adj,
   bool crit = true;
   double err;
   int it = 0;
-
-  // check trivial cases
-  // if( (lambda_max > 0) && (lambda > lambda_max - tolout) ){
-  //  crit = false;
-  //  sigma = arma::diagmat(S.diag(0));
-  // }
-
-  // if( (lambda < tolout) && ( ((int) accu(adj)) >= p*p - p) ){
-  //  crit = false;
-  //  sigma = S;
-  // }
 
   arma::mat inv = inv_sympd(sigma);
 
@@ -114,6 +105,8 @@ Rcpp::List gicf_core(arma::mat start, arma::umat adj,
         arma::mat ZY = inv_v_ne.t() * S.submat(m_v, v);
 
         // local linear regression phase
+        arma::mat lambda_loc = lambda.submat(ne_v0, v);
+        
         arma::mat beta_loc = sigma.submat(ne_v0, v); // initial condition
         int q = beta_loc.n_rows; // n. of coefficients
 
@@ -142,7 +135,7 @@ Rcpp::List gicf_core(arma::mat start, arma::umat adj,
             double sgn;
             if (tmp2 < 0) sgn = -tau/tmp; else if (tmp > 0) sgn = tau/tmp; else sgn = 0;
 
-            beta_loc(j) = max( 0.0, abs(tmp2/tau) - lambda ) * sgn;
+            beta_loc(j) = max( 0.0, abs(tmp2/tau) - lambda_loc(j) ) * sgn;
 
             double betadiff = beta_loc(j) - betajprev;
             if ( betadiff != 0 ) ZZbeta = ZZbeta + betadiff * ZZ.col(j);
@@ -206,28 +199,4 @@ Rcpp::List gicf_core(arma::mat start, arma::umat adj,
                              Named("loglikpen") = llk - pen,
                              Named("pen") = pen,
                              Named("it") = it );
-}
-
-
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export]]
-Rcpp::List gicf_wrapper(arma::mat start,
-                      arma::umat adj, int n, arma::mat S,
-                      arma::vec lambda, double lambda_max,
-                      double tolout, double tolin, double iterout, double iterin) {
-  int L = lambda.n_elem;
-
-  Rcpp::List out(L);
-  Rcpp::List fit;
-
-  for ( int l = 0; l < L; l++ ) {
-    // lambda_max (if available) is only used for the first fit
-    // (lambda_max < 0 means that feature is disabled)
-    fit = gicf_core(start, adj, n, S, lambda(l), lambda_max - 2*l*abs(lambda_max), tolout, tolin, iterout, iterin);
-    out[l] = fit;
-    arma::mat sigma = fit["sigma"];
-    start = sigma;
-  }
-
-  return out;
 }
