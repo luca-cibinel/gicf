@@ -85,26 +85,28 @@ rsigma <- function(p, b){
 }
 
 # Data simulation ====
-n <- 1000
+n <- 2000
 N.sim <- 50
-bands <- c(1, 7, 14)
-p <- 50
+bands <- c(3, 10)
+ps <- c(25, 50, 100, 200, 300)
 
-model.directory <- path.join(".", paste0("p", p))
-
-for(b in bands){
-  Sigma <- rsigma(p, b)
-  band.directory <- path.join(model.directory, paste0("b", b))
+for(p in ps){
+  model.directory <- path.join(".", paste0("p", p))
   
-  if(!file.exists(band.directory)){
-    dir.create(band.directory, recursive = T)
-  }
-  
-  write.table(Sigma, path.join(band.directory, "sigma.dat"))
-  
-  for(s in 1:N.sim){
-    data <- as.matrix(rmvnorm(n, sigma = Sigma))
+  for(b in bands){
+    Sigma <- rsigma(p, b)
+    band.directory <- path.join(model.directory, paste0("b", b))
     
-    write.table(data, path.join(band.directory, paste0("sim", s, ".dat")))
+    if(!file.exists(band.directory)){
+      dir.create(band.directory, recursive = T)
+    }
+    
+    write.table(Sigma, path.join(band.directory, "sigma.dat"))
+    
+    for(s in 1:N.sim){
+      data <- as.matrix(rmvnorm(n, sigma = Sigma))
+      
+      write.table(data, path.join(band.directory, paste0("sim", s, ".dat")))
+    }
   }
 }
