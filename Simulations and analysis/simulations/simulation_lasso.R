@@ -20,7 +20,7 @@ p <- 50 # Model size
 
 kappa.max <- 5 # Maximum value of \kappa to be examined
 
-simulation.batch <- 1:20 # Desired simulations
+simulation.batch <- 21:30 # Desired simulations
 N.sim <- length(simulation.batch)
 N.folds <- 5 # Number of CV folds
 N.kappa <- 30 # Number of values of \kappa to sample
