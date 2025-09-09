@@ -30,6 +30,8 @@ N.p <- length(p.seq)
 
 zero <- 1e-4 # Tolerance: absolute values below this threshold are treated as 0
 
+backup.period <- 2 # After how many simulations should a partial result be stored for backup?
+
 # METRICS ====
 metrics.names <- c(
   "lambda", # optimal \lambda
@@ -413,6 +415,23 @@ for(b in 1:N.b){ # For each n. of bands
         metrics[paste0("cv.time.", tname), b, s, q, "LRIDGE"] <- cv.time.lridge[tname]
         metrics[paste0("cv.all.time.", tname), b, s, q, "LRIDGE"] <- cv.all.time.lridge[tname]
       }
+    }
+    
+    if(q %% backup.period == 0){
+      ps.so.far <- 1:q
+      bands.so.far <- b.seq[1:b]
+      
+      fname <- paste0(
+        "simulation_time__b", 
+        paste0(bands.so.far, collapse = "_"),
+        "__p_", 
+        paste0(ps.so.far, collapse = "_"), 
+        ".csv"
+      )
+      
+      df <- array2DF(metrics)
+      colnames(df) <- c("metric", "n_bands", "simulation", "p", "method", "value")
+      write.table(df, path.join("results", "partial", fname), row.names = F)
     }
     
     print("")
