@@ -1,24 +1,33 @@
-# HEADER ====
 rm(list = ls()) # clear environment
-source("../gicf/gicf_source.R")
+
+path.join <- function(...){
+  sep <- .Platform$file.sep
+  pat <- paste0("\\", sep, "$")
+  
+  paths <- lapply(list(...), function(x){gsub(pat, "", x)})
+  
+  return(paste0(paths, collapse = sep))
+}
+
+# HEADER ====
+source("../gicf/gicf.R")
 
 set.seed(1234)
 
-d.seq <- c(1, 3, 5) # Sequence of 10*(true graph densities)
+b.seq <- c(1, 7, 14) # Sequence of 10*(true graph densities)
 n.seq <- c(45, 75, 100, 250, 500, 1000) # Sequence of dataset size
 p <- 50 # Model size
 
-N.sim <- 10 # Number of simulations
+simulation.batch <- 1:30 # Desired simulations
+N.sim <- length(simulation.batch)
 N.folds <- 5 # Number of CV folds
 N.kappa <- 30 # Number of values of \kappa to sample
-N.d <- length(d.seq)
+N.b <- length(b.seq)
 N.n <- length(n.seq)
 
 zero <- 1e-4 # Tolerance: absolute values below this threshold are treated as 0
 
-# Parameters to access simulated data (DO NOT CHANGE)
-model <- "RB" # Model name: Random entries with Banded structure
-n.key <- 2000 # Key to access simulated data
+backup.period <- 4
 
 # METRICS ====
 metrics.names <- c(
@@ -28,11 +37,11 @@ metrics.names <- c(
   "RMSE" # Root Mean Square Error
 )
 
-metrics <- array(zero, c(length(metrics.names), N.d, N.sim, N.n, 2)) # [metric name, density, simulation, n, MLE/RIDGE]
+metrics <- array(zero, c(length(metrics.names), N.b, N.sim, N.n, 2)) # [metric name, density, simulation, n, MLE/RIDGE]
 dimnames(metrics)[[1]] <- metrics.names
 dimnames(metrics)[[5]] <- c("MLE", "RIDGE")
 
-true.condnum <- rep(0, N.d) # Store true condition number
+true.condnum <- rep(0, N.b) # Store true condition number
 
 condnum <- function(A){
   eig <- eigen(A)$values
@@ -88,11 +97,10 @@ model.selection.cv <- function(y, # data
     S.test <- cov(test) * (n.test - 1)/n.test
     
     for(K in 1:N.k){
-      D <- diag(k.seq[K], p)
-      fit <- gicf.run(S = S.train + D, n = n.train, lambda = 0,
+      fit <- gicf(S = S.train, n = n.train, lambda = 0, kappa = k.seq[K],
                       adj = adj)$sigma
       
-      vals[K] <- vals[K] + gicf.likelihood(fit, S.test, n.test, 0)
+      vals[K] <- vals[K] + gcgmloglik(fit, S.test, n.test)
     }
   }
   
@@ -100,16 +108,16 @@ model.selection.cv <- function(y, # data
 }
 
 # SIMULATION ====
-for(d in 1:N.d){ # For each graph density
-  density <- d.seq[d]/10
+for(b in 1:N.b){ # For each graph density
+  n.bands <- b.seq[b]
   
   print("")
   print("")
-  print(paste("DENSITY:", density))
+  print(paste("N. OF BANDS:", n.bands))
   
   Sigma <- as.matrix( # Read true Sigma from simulated data
     read.table(
-      paste0("data/sigma_mod_", model, "_d_", d.seq[d], "_p_", p, "_n_", n.key, ".dat")
+      path.join("data", paste0("p", p), paste0("b", n.bands), "sigma.dat")
     )
   )
   
@@ -120,54 +128,75 @@ for(d in 1:N.d){ # For each graph density
   adj[abs(Sigma) > zero] <- 1
   diag(adj) <- 0
   
-  true.condnum[d] <- condnum(Sigma) # Store true condition number
-  
-  data <- as.matrix( # Read simulated data
-    read.table(
-      paste0("data/simul_mod_", model, "_d_", d.seq[d], "_p_", p, "_n_", n.key, ".dat")
-    )
-  )
+  true.condnum[b] <- condnum(Sigma) # Store true condition number
   
   for(s in 1:N.sim){ # Repeat for each simulation:
     print(paste("Simulation:", s))
+    
+    data <- as.matrix( # Read simulated data
+      read.table(
+        path.join("data", paste0("p", p), paste0("b", n.bands), paste0("sim", simulation.batch[s], ".dat"))
+      )
+    )
     
     for(m in 1:N.n){ # For each desired dataset size:
       cat(paste("n =", n.seq[m], "-"))
       n.loc <- n.seq[m] # Local dataset size
       
-      y <- data[(s - 1)*n.seq[N.n] + 1:n.loc, ] # Extract local dataset
+      y <- data[1:n.loc, ] # Extract local dataset
       
       S <- cov(y) * (n.loc - 1)/n.loc # Compute local sample covariance matrix
       
       # Compute MLE (if possible)
       if(n.loc > p){
-        sigma.mle <- gicf.run(S = S, n = n.loc, adj = adj)$sigma # MLE
+        sigma.mle <- gicf(S = S, n = n.loc, adj = adj)$sigma # MLE
         
-        metrics["kappa", d, s, m, "MLE"] <- 0
-        metrics["condnum", d, s, m, "MLE"] <- condnum(sigma.mle)
-        metrics["EL", d, s, m, "MLE"] <- entropy.loss(sigma.mle, Sigma, detsigma, Theta)
-        metrics["RMSE", d, s, m, "MLE"] <- rmse(sigma.mle, Sigma)
+        metrics["kappa", b, s, m, "MLE"] <- 0
+        metrics["condnum", b, s, m, "MLE"] <- condnum(sigma.mle)
+        metrics["EL", b, s, m, "MLE"] <- entropy.loss(sigma.mle, Sigma, detsigma, Theta)
+        metrics["RMSE", b, s, m, "MLE"] <- rmse(sigma.mle, Sigma)
       }
       
       # Compute shrinked estimate
       kappa.sel <- model.selection.cv(y, N.folds, N.kappa, k.max = 3, adj = adj)
-      sigma.ridge <- gicf.run(S = S + diag(kappa.sel, p), n = n.loc, adj = adj)$sigma
+      sigma.ridge <- gicf(S = S, n = n.loc, adj = adj, kappa = kappa.sel)$sigma
       
-      metrics["kappa", d, s, m, "RIDGE"] <- kappa.sel
-      metrics["condnum", d, s, m, "RIDGE"] <- condnum(sigma.ridge)
-      metrics["EL", d, s, m, "RIDGE"] <- entropy.loss(sigma.ridge, Sigma, detsigma, Theta)
-      metrics["RMSE", d, s, m, "RIDGE"] <- rmse(sigma.ridge, Sigma)
+      metrics["kappa", b, s, m, "RIDGE"] <- kappa.sel
+      metrics["condnum", b, s, m, "RIDGE"] <- condnum(sigma.ridge)
+      metrics["EL", b, s, m, "RIDGE"] <- entropy.loss(sigma.ridge, Sigma, detsigma, Theta)
+      metrics["RMSE", b, s, m, "RIDGE"] <- rmse(sigma.ridge, Sigma)
+    }
+    
+    if(s %% backup.period == 0){
+      sims.so.far <- 1:s
+      bands.so.far <- b.seq[1:b]
+      
+      fname <- paste0(
+        "simulation_mle__b", 
+        paste0(bands.so.far, collapse = "_"),
+        "__sim_", 
+        paste0(sims.so.far, collapse = "_"), 
+        ".csv"
+      )
+      
+      df <- array2DF(metrics)
+      colnames(df) <- c("metric", "n_bands", "simulation", "n", "method", "value")
+      write.table(df, path.join("results", "partial", fname), row.names = F)
     }
     
     print("")
   }
 }
 
+df <- array2DF(metrics)
+colnames(df) <- c("metric", "n_bands", "simulation", "n", "method", "value")
+write.table(df, path.join("results", "simulation_mle.csv"), row.names = F)
+
 # OUTPUT ====
 library(latex2exp)
 
 or.par <- par(mar = c(5, 4, 4, 2) + 0.5)
-clrs <- palette.colors(palette = "Okabe-Ito", n = N.d)
+clrs <- palette.colors(palette = "Okabe-Ito", n = N.b)
 
 # Titles of the plots
 titles <- c(
@@ -194,7 +223,7 @@ for(nm in metrics.names){
     tempM <- 0
     tempm <- Inf
     
-    for(d in 1:N.d){
+    for(d in 1:N.b){
       temp1 <- colMeans(metrics[nm, d, , , "MLE"])[-1]
       temp2 <- colMeans(metrics[nm, d, , , "RIDGE"])
       
@@ -223,7 +252,7 @@ for(nm in metrics.names){
            col = clrs[1], pch = 20 + 1 )
   }
   
-  for(d in 2:N.d){
+  for(d in 2:N.b){
     lines(n.seq, colMeans(metrics[nm, d, , , "RIDGE"]),
           col = clrs[d], type = "l", lwd = 1)
     points(n.seq, colMeans(metrics[nm, d, , , "RIDGE"]),
@@ -237,8 +266,8 @@ for(nm in metrics.names){
     }
   }
   
-  legend("topright", col = clrs, pch = (20 + d.seq), lty = 1,
-         legend = paste0(d.seq*10, "%"), title = "Density",
+  legend("topright", col = clrs, pch = (20 + b.seq), lty = 1,
+         legend = paste0(b.seq*10, "%"), title = "Density",
          pt.bg = clrs, lwd = 2)
 }
 
