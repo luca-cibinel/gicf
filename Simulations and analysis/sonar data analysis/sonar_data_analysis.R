@@ -1,12 +1,13 @@
-# HEADER ====
 rm(list = ls()) # clear environment
 
+# HEADER ====
+
 library(groupdata2)
-source("../gicf/gicf_source.R")
+source("../gicf/gicf.R")
 
 set.seed(1234)
 
-use.banded.structure <- F
+use.banded.structure <- T
 
 if(use.banded.structure){
   bands.rocks <- 17
@@ -16,7 +17,7 @@ if(use.banded.structure){
   bands.metals <- 60
 }
 
-N.lambdas <- 30
+N.lambdas <- 20#30
 N.kappas <- 30
 N.out.folds <- 5
 N.in.folds <- 10
@@ -60,15 +61,15 @@ banded.adj <- function(p, k){
 # Finds the maximum value of lambda for which kappa_max is not numerically zero
 # Needed due to numerical issues in the sample covariance matrix
 empirical.max.lambda <- function(S, adj = 1 - diag(1, nrow(S)), zero = 1e-8){
-  l.max <- max.lambda(S, adj = adj)
+  l.max <- lambdamax(S, adj = adj)
   
   a <- 0
   b <- l.max
   
   while(b - a > zero){
     d <- (a + b)/2
-    k <- max.kappa(S, d, adj)
-    
+    k <- kappamax(S, d, adj)
+    +7
     if(k > zero){
       a <- d
     }else{
@@ -105,7 +106,7 @@ model.selection.cv <- function(y, # data
   for(L in 1:N.l){
     lambda.loc <- lambda.seq[L]
     
-    kappa.max.loc <- min( max.kappa(S, lambda.loc, adj = adj), k.max )
+    kappa.max.loc <- min( kappamax(S, lambda.loc, adj = adj), k.max )
     
     if(n > p)
       kappa.seq <- seq(0, kappa.max.loc, length.out = N.k)
@@ -137,10 +138,9 @@ model.selection.cv <- function(y, # data
         S.train <- cov(train) * (n.train - 1)/n.train
         S.validation <- cov(validation) * (n.validation - 1)/n.validation
         
-        D <- diag(kappa.loc, p)
-        fit <- gicf.run(S = S.train + D, n = n.train, lambda = lambda.loc, adj = adj)$sigma
+        fit <- gicf(S = S.train, n = n.train, lambda = lambda.loc, kappa = kappa.loc, adj = adj)$sigma
         
-        val <- val + gicf.likelihood(fit, S.validation, n.validation, 0)
+        val <- val + gcgmloglik(fit, S.validation, n.validation)
       }
       
       history <- rbind(history, c(kappa.loc, lambda.loc, val))
@@ -275,14 +275,16 @@ QDA.cv <-  function(y.folded, cv.scores.rocks, cv.scores.metals, use.k, use.l){
     
     n.rocks <- sum(train$V61 == "R")
     S.rocks <- cov(train[train$V61 == "R", -61]) * (n.rocks - 1)/n.rocks
-    sigma.rocks <- gicf.run(S = S.rocks + diag(pars.rocks["K"], 60), n = n.rocks,
+    sigma.rocks <- gicf(S = S.rocks, n = n.rocks,
                             lambda = pars.rocks["L"],
+                            kappa = pars.rocks["K"],
                             adj = banded.adj(60, bands.rocks))$sigma
     
     n.metals <- sum(train$V61 == "M")
     S.metals <- cov(train[train$V61 == "M", -61]) * (n.metals - 1)/n.metals
-    sigma.metals <- gicf.run(S = S.metals + diag(pars.metals["K"], 60), n = n.metals,
+    sigma.metals <- gicf(S = S.metals, n = n.metals,
                             lambda = pars.metals["L"],
+                            kappa = pars.metals["K"],
                             adj = banded.adj(60, bands.metals))$sigma
     
     err <- err + QDA.err(test, pi.rocks, mu.rocks, solve(sigma.rocks), pi.metals, mu.metals, solve(sigma.metals))
@@ -351,7 +353,7 @@ cv.scores.metals <- abind::abind(cv.scores.metals,
                                 along = 1)
 
 # OUTPUT ====
-source("../gicf/gicf_source.R")
+source("../gicf/gicf.R")
 
 data.folded <- rbind(data.rocks, data.metals)
 error.rate.mle <- QDA.cv(data.folded, 
@@ -371,3 +373,8 @@ print(error.rate.mle)
 print(error.rate.lambda)
 print(error.rate.kappa)
 print(error.rate.gicf)
+
+errors <- c(error.rate.mle, error.rate.lambda, error.rate.kappa, error.rate.gicf)
+names(errors) <- c("MLE", "LAMBDA", "KAPPA", "GICF")
+
+write.table(errors, paste0("sonar_analysis_band_structure_", use.banded.structure, ".csv"))
