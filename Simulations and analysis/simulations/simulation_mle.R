@@ -39,6 +39,9 @@ metrics.names <- c(
 
 metrics <- array(zero, c(length(metrics.names), N.b, N.sim, N.n, 2)) # [metric name, density, simulation, n, MLE/RIDGE]
 dimnames(metrics)[[1]] <- metrics.names
+dimnames(metrics)[[2]] <- sapply(b.seq, toString)
+dimnames(metrics)[[3]] <- sapply(simulation.batch, toString)
+dimnames(metrics)[[4]] <- sapply(n.seq, toString)
 dimnames(metrics)[[5]] <- c("MLE", "RIDGE")
 
 true.condnum <- rep(0, N.b) # Store true condition number
