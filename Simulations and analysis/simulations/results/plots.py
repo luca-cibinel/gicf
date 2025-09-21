@@ -6,8 +6,8 @@ import os
 
 # %% HEADER
 
-simulation = "lasso"
-key = "n"
+simulation = "time"
+key = "p"
 results_file = f"simulation_{simulation}.csv"
 figures_folder = os.path.join("figures", simulation)
 
@@ -45,12 +45,19 @@ def csv_to_matrix(results, metric, model, method):
 if not os.path.exists(figures_folder):
     os.makedirs(figures_folder)
 
+print("Reading results...")
 results = pd.read_csv(results_file, sep = " ")
+print("Results retrieved!")
 
 metrics = np.unique(results.loc[:, "metric"])
 models = np.unique(results.loc[:, "n_bands"])
 methods = np.unique(results.loc[:, "method"])
 n = np.unique(results.loc[:, key])
+
+print(f"Metrics: {metrics}")
+print(f"Models: {models}")
+print(f"Methods: {methods}")
+print(f"{key}: {n}")
 
 colors = ["black", "orange", "blue"]
 markers = ["o", "v", "^", "P", "*", "X"]
@@ -63,6 +70,10 @@ titles = {
         "cv.time.elapsed": "Elapsed time (CV)",
         "cv.time.sys.self": "System time (CV)",
         "cv.time.user.self": "User time (CV)",
+        "cv.all.iters": "Total n. of iterations (CV)",
+        "cv.all.time.elapsed": "Total elapsed time (CV)",
+        "cv.all.time.sys.self": "Total system time (CV)",
+        "cv.all.time.user.self": "Total user time (CV)",
         "time.elapsed": "Elapsed time",
         "time.sys.self": "System time",
         "time.user.self": "User time",
