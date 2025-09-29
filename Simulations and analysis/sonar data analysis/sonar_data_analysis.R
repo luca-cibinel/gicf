@@ -7,7 +7,7 @@ source("../gicf/gicf.R")
 
 set.seed(1234)
 
-use.banded.structure <- T
+use.banded.structure <- F
 
 if(use.banded.structure){
   bands.rocks <- 17
@@ -19,7 +19,7 @@ if(use.banded.structure){
 
 N.lambdas <- 20#30
 N.kappas <- 30
-N.out.folds <- 5
+N.out.folds <- 10
 N.in.folds <- 10
 
 # DATA ====
@@ -109,10 +109,11 @@ model.selection.cv <- function(y, # data
     kappa.max.loc <- min( kappamax(S, lambda.loc, adj = adj), k.max )
     
     if(n > p)
-      kappa.seq <- seq(0, kappa.max.loc, length.out = N.k)
+      kappa.seq <- seq(0, log(kappa.max.loc + 1), length.out = N.k)
     else
-      kappa.seq <- seq(0, kappa.max.loc, length.out = N.k + 1)[-1]
+      kappa.seq <- seq(0, log(kappa.max.loc + 1), length.out = N.k + 1)[-1]
     
+    kappa.seq <- exp(kappa.seq) - 1
     #print(paste(kappa.max.loc, seq.length.loc))
     
     for(K in 1:N.k){
