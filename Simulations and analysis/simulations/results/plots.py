@@ -6,10 +6,12 @@ import os
 
 # %% HEADER
 
-simulation = "time"
-key = "p"
+simulation = "mle"
+key = "p" if simulation == "time" else "n"
+fig_suffix = "_p_50" if simulation != "time" else ""
 results_file = f"simulation_{simulation}.csv"
 figures_folder = os.path.join("figures", simulation)
+legends_folder = os.path.join("figures", "legends")
 
 line_styles = {
         "MLE": "--",
@@ -24,42 +26,15 @@ xaxis_start = {
         "RIDGE": 0,
         "LRIDGE": 0
     }
-    
-# %% UTILITY
 
-def csv_to_matrix(results, metric, model, method):
-    rows = []
-    
-    simulations = np.unique(results.loc[:, "simulation"])
-    
-    results_loc = results.loc[results["metric"] == metric, :]
-    results_loc = results_loc.loc[results_loc["n_bands"] == model, :]
-    results_loc = results_loc.loc[results_loc["method"] == method, :]
-    
-    for s in simulations:
-        rows += [results_loc.loc[results_loc["simulation"] == s, "value"]]
-        
-    return np.array(rows)
+method_name = {
+        "MLE": "MLE",
+        "LASSO": "covglasso",
+        "RIDGE": "GICF",
+        "LRIDGE": "GICF"
+    }
 
-# %% MAIN
-if not os.path.exists(figures_folder):
-    os.makedirs(figures_folder)
-
-print("Reading results...")
-results = pd.read_csv(results_file, sep = " ")
-print("Results retrieved!")
-
-metrics = np.unique(results.loc[:, "metric"])
-models = np.unique(results.loc[:, "n_bands"])
-methods = np.unique(results.loc[:, "method"])
-n = np.unique(results.loc[:, key])
-
-print(f"Metrics: {metrics}")
-print(f"Models: {models}")
-print(f"Methods: {methods}")
-print(f"{key}: {n}")
-
-colors = ["black", "orange", "blue"]
+colors = ["#000000", "#ffa500", "#0000ff"]
 markers = ["o", "v", "^", "P", "*", "X"]
 require_01_ylims = ["F1", "d", "ePPV", "eTNR", "eTPR", "lambdar0"]
 titles = {
@@ -83,6 +58,45 @@ titles = {
         "lambda": "$\lambda$",
         "lambdar0": "$\lambda / \lambda_{MAX}(0)$"
     }
+    
+# %% UTILITY
+
+def csv_to_matrix(results, metric, model, method):
+    rows = []
+    
+    simulations = np.unique(results.loc[:, "simulation"])
+    
+    results_loc = results.loc[results["metric"] == metric, :]
+    results_loc = results_loc.loc[results_loc["n_bands"] == model, :]
+    results_loc = results_loc.loc[results_loc["method"] == method, :]
+    
+    for s in simulations:
+        rows += [results_loc.loc[results_loc["simulation"] == s, "value"]]
+        
+    return np.array(rows)
+
+# %% MAIN
+if not os.path.exists(figures_folder):
+    os.makedirs(figures_folder)
+    
+if not os.path.exists(legends_folder):
+    os.makedirs(legends_folder)
+
+print("Reading results...")
+results = pd.read_csv(results_file, sep = " ")
+print("Results retrieved!")
+
+metrics = np.unique(results.loc[:, "metric"])
+models = np.unique(results.loc[:, "n_bands"])
+methods = np.unique(results.loc[:, "method"])
+n = np.unique(results.loc[:, key])
+
+print(f"Metrics: {metrics}")
+print(f"Models: {models}")
+print(f"Methods: {methods}")
+print(f"{key}: {n}")
+
+legend_drawn = False
 
 for metric in metrics:
     if metric.endswith(".child"):
@@ -99,33 +113,32 @@ for metric in metrics:
             
             X = csv_to_matrix(results, metric, model, method)
             
+            xstart = xaxis_start[method] if key == "n" else 0
+            
             ax.plot(
-                n[xaxis_start[method]:], 
-                X.mean(0)[xaxis_start[method]:], 
+                n[xstart:], 
+                X.mean(0)[xstart:], 
                 line_styles[method], 
                 color = colors[i],
                 linewidth = 1,
-                label = f"{model} bands" if line_styles[method] == "-" else None
-            )
-            
-            ax.scatter(
-                n[xaxis_start[method]:], 
-                X.mean(0)[xaxis_start[method]:], 
                 marker = markers[i],
-                s = 35,
-                color = colors[i],
-                facecolor = colors[i] if line_styles[method] == "-" else (0,0,0,0),
-                linewidth = 0.5
+                mfc = colors[i] + ("" if line_styles[method] == "-" else "00"),
+                mec = colors[i],
+                #ms = 35,
+                label = f"{model} band{'s' if model > 1 else ''}"
             )
             
-            ci = X.std(0)[xaxis_start[method]:]
+            ci = X.std(0)[xstart:]
             ax.fill_between(
-                n[xaxis_start[method]:], 
-                X.mean(0)[xaxis_start[method]:] - ci,  
-                X.mean(0)[xaxis_start[method]:] + ci,
+                n[xstart:], 
+                X.mean(0)[xstart:] - ci,  
+                X.mean(0)[xstart:] + ci,
                 color = colors[i],
                 alpha = 0.1
             )
+            
+            if metric == "condnum":
+                ax.axhline(y=50, color='gray', linestyle='-')
     
     if metric in require_01_ylims:
         ax.set_ylim(-0.05, 1.05)
@@ -136,11 +149,29 @@ for metric in metrics:
     
     ax.set_ylabel(titles.get(metric, metric))
     ax.set_xlabel(key)
+
+    if not legend_drawn:
+        h, l = ax.get_legend_handles_labels()
+        handles = [plt.plot([],marker="", ls="")[0]]*2 + h
+        labels = [f"{method_name[m]}:" for m in methods] + l
+        
+        _, ax_temp = plt.subplots()
+        ax_temp.axis("off")
+        legend = ax_temp.legend(handles, labels, frameon = False, ncols = len(models) + 1, facecolor = "white", framealpha = 0)
+        
+        fig_l  = legend.figure
+        fig_l.canvas.draw()
+        bbox_l  = legend.get_window_extent().transformed(fig_l.dpi_scale_trans.inverted())
+        
+        fig_l.savefig(os.path.join(legends_folder, f"legend_{simulation}_horiz.png"), bbox_inches = bbox_l, format = "png")
+        fig_l.savefig(os.path.join(legends_folder, f"legend_{simulation}_horiz.pdf"), bbox_inches = bbox_l, format = "pdf")
     
-    ax.legend()
+        legend.remove()
+        
+        legend_drawn = True
     
-    fig.savefig(os.path.join(figures_folder, f"{metric}.png"), format = "png")
-    fig.savefig(os.path.join(figures_folder, f"{metric}.pdf"), format = "pdf")
+    fig.savefig(os.path.join(figures_folder, f"{simulation}_{metric}{fig_suffix}.png"), format = "png")
+    fig.savefig(os.path.join(figures_folder, f"{simulation}_{metric}{fig_suffix}.pdf"), format = "pdf")
             
             
     
