@@ -46,6 +46,8 @@ Rcpp::List gicf_core(arma::mat start, arma::umat adj,
                      double lambda_max,
                      double tolout, double tolin,
                      double iterout, double iterin) {
+  // cout << "Review version initiated..." << endl;
+  
   int p = S.n_rows;
 
   // Utilities
@@ -115,21 +117,21 @@ Rcpp::List gicf_core(arma::mat start, arma::umat adj,
         arma::mat beta_loc = sigma.submat(ne_v0, v); // initial condition
         int q = beta_loc.n_rows; // n. of coefficients
 
+        arma::mat ZZbeta = ZZ * beta_loc; // initialize ZZ * beta
+        
+        // optimise w.r.t tau
+        tau = as_scalar( beta_loc.t()*ZZbeta - 2*beta_loc.t()*ZY + S(v,v) );
+        
         // linreg iteration utility quantities
         bool critin = true;
         double errin;
         int itin = 0;
-        double tauprev = 0;
+        // double tauprev = 0;
         arma::mat betaprev = beta_loc;
-
+        
         // linreg iteration cycle
         while ( critin ) {
-          // inner linreg utility quanitities
-          arma::mat ZZbeta = ZZ * beta_loc;
-
-          // update for tau
-          tau = as_scalar( beta_loc.t()*ZZbeta - 2*beta_loc.t()*ZY + S(v,v) );
-
+          
           // update for beta
           for ( int j = 0; j < q; j++ ) {
             double betajprev = as_scalar(beta_loc(j));
@@ -146,11 +148,12 @@ Rcpp::List gicf_core(arma::mat start, arma::umat adj,
             if ( betadiff != 0 ) ZZbeta = ZZbeta + betadiff * ZZ.col(j);
           }
 
-          errin = (as_scalar(accu( abs(beta_loc - betaprev) )) + abs(tau - tauprev))/p;
+          // errin = (as_scalar(accu( abs(beta_loc - betaprev) )) + abs(tau - tauprev))/p;
+          errin = as_scalar(accu( abs(beta_loc - betaprev) ))/q;
           itin++;
           critin = ( (errin > tolin) & (itin < iterin) );
           betaprev = beta_loc;
-          tauprev = tau;
+          // tauprev = tau;
         }
 
         // fill non neighbor related coefficients with zeros
